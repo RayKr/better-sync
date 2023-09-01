@@ -1,15 +1,15 @@
 {
-  "name": "zotero-addon-template",
-  "version": "1.0.0",
-  "description": "Zotero Addon Template",
+  "name": "better-sync",
+  "version": "0.0.1",
+  "description": "A better way to sync your file on multiple devices.",
   "config": {
-    "addonName": "Zotero Addon Template",
-    "addonID": "addontemplate@euclpts.com",
-    "addonRef": "addontemplate",
-    "addonInstance": "AddonTemplate",
-    "prefsPrefix": "extensions.zotero.addontemplate",
-    "releasepage": "https://github.com/windingwind/zotero-addon-template/releases/latest/download/zotero-addon-template.xpi",
-    "updaterdf": "https://raw.githubusercontent.com/windingwind/zotero-addon-template/main/update.json"
+    "addonName": "Better Sync",
+    "addonID": "bettersync@swroom.com",
+    "addonRef": "bettersync",
+    "addonInstance": "BetterSync",
+    "prefsPrefix": "extensions.zotero.bettersync",
+    "releasepage": "https://github.com/RayKr/better-sync/releases/latest/download/better-sync.xpi",
+    "updaterdf": "https://raw.githubusercontent.com/RayKr/better-sync/main/update.json"
   },
   "main": "src/index.ts",
   "scripts": {
@@ -32,16 +32,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/windingwind/zotero-addon-template.git"
+    "url": "git+https://github.com/raykr/better-sync.git"
   },
-  "author": "windingwind",
+  "author": "RayKr",
   "license": "AGPL-3.0-or-later",
   "bugs": {
-    "url": "https://github.com/windingwind/zotero-addon-template/issues"
+    "url": "https://github.com/raykr/better-sync/issues"
   },
-  "homepage": "https://github.com/windingwind/zotero-addon-template#readme",
+  "homepage": "https://github.com/raykr/better-sync#readme",
   "dependencies": {
-    "zotero-plugin-toolkit": "^2.2.8"
+    "zotero-plugin-toolkit": "^2.2.9"
   },
   "devDependencies": {
     "@types/node": "^20.4.2",
