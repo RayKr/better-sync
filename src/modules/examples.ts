@@ -95,7 +95,7 @@ export class KeyExampleFactory {
       key: "L",
       modifiers: "alt",
       callback: (keyOptions) => {
-        addon.hooks.onShortcuts("larger");
+        // addon.hooks.onShortcuts("larger");
       },
     });
     // Register an element key using <key> for Alt+S
@@ -132,7 +132,7 @@ export class KeyExampleFactory {
       key: "C",
       modifiers: "alt",
       callback: (keyOptions) => {
-        addon.hooks.onShortcuts("confliction");
+        // addon.hooks.onShortcuts("confliction");
       },
     });
     new ztoolkit.ProgressWindow(config.addonName)
@@ -204,7 +204,15 @@ export class UIExampleFactory {
       tag: "menuitem",
       id: "zotero-itemmenu-addontemplate-test",
       label: getString("menuitem-label"),
-      commandListener: (ev) => addon.hooks.onDialogEvents("dialogExample"),
+      // commandListener: (ev) => addon.hooks.onDialogEvents("dialogExample"),
+      icon: menuIcon,
+    });
+    ztoolkit.Menu.register("item", {
+      tag: "menuitem",
+      id: "bettersync-itemmenu-sync",
+      label: getString("menuitem-sync-stored-to-linked-label"),
+      commandListener: (ev) =>
+        addon.hooks.onMenuClickEvents("syncStored2Linked"),
       icon: menuIcon,
     });
   }
@@ -799,7 +807,7 @@ export class HelperExampleFactory {
             {
               type: "click",
               listener: (e: Event) => {
-                addon.hooks.onDialogEvents("clipboardExample");
+                // addon.hooks.onDialogEvents("clipboardExample");
               },
             },
           ],
@@ -830,7 +838,7 @@ export class HelperExampleFactory {
             {
               type: "click",
               listener: (e: Event) => {
-                addon.hooks.onDialogEvents("filePickerExample");
+                // addon.hooks.onDialogEvents("filePickerExample");
               },
             },
           ],
@@ -861,7 +869,7 @@ export class HelperExampleFactory {
             {
               type: "click",
               listener: (e: Event) => {
-                addon.hooks.onDialogEvents("progressWindowExample");
+                // addon.hooks.onDialogEvents("progressWindowExample");
               },
             },
           ],
@@ -892,7 +900,7 @@ export class HelperExampleFactory {
             {
               type: "click",
               listener: (e: Event) => {
-                addon.hooks.onDialogEvents("vtableExample");
+                // addon.hooks.onDialogEvents("vtableExample");
               },
             },
           ],
