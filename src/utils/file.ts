@@ -3,12 +3,9 @@ import { getPref } from "../utils/prefs";
 
 /**
  * Get selected attachments
- * @param {bool} all    Get all attachments or only valid attachments (default is false)
  * @returns {array}    Array with attachment ids
  */
-export function getSelectedAttachments(
-  all: boolean = false,
-): string[] | number[] {
+export function getSelectedAttachments(): string[] | number[] {
   // get selected items
   let attachments: Array<any> = ZoteroPane.getSelectedItems()
     .map((item: any) => (item.isRegularItem() ? item.getAttachments() : [item]))
@@ -53,8 +50,7 @@ export function getBaseAttachmentPath(): string {
     // get target folder path from preference
     path = Zotero.Prefs.get("extensions.zotero.baseAttachmentPath", true);
   } else {
-    // get target folder path from preference
-    path = Zotero.Prefs.get("extensions.zotero.baseAttachmentPath", true);
+    path = getPref("baseAttachmentPath");
   }
   if (!path) {
     // TODO show error message

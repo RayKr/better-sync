@@ -43,6 +43,10 @@ function autoSync(stored_file, linked_dir) {
     // get filename
     const filename = stored_file.split("/").pop();
     const destination = path.join(linked_dir, filename);
+    // check if the directory exists
+    if (!shell.test("-e", linked_dir)) {
+      shell.mkdir("-p", linked_dir);
+    }
     // check existence of the file
     if (shell.test("-e", destination)) {
       // check if the file is a hard link

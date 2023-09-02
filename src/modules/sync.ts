@@ -12,31 +12,6 @@ export class BetterSync {
    */
   static syncStored2Linked() {
     ztoolkit.log("syncStored2Linked", "Started.");
-    console.log("syncStored2Linked", "Started.");
-    const a = getSelectedAttachments();
-    // ztoolkit.log("syncStored2Linked", a);
-    // get selected attachments
-    // const atts = Zotero.Items.get(a);
-    // // show infoWindow %
-    // const pw = new ztoolkit.ProgressWindow("BetterSync");
-    // pw.createLine({
-    //   type: "success",
-    //   text: "Finish",
-    //   progress: 100,
-    // }).show();
-
-    // atts.forEach((att) => {
-    //   // get attachment path
-    //   if (!att.fileExists() || att.isTopLevelItem()) {
-    //     // TODO show error message
-    //   } else {
-    //     // get attachment path
-    //     const att_path = att.getFilePath() as string;
-    //     const target_folder = getBaseAttachmentPath();
-    //     // create hard link
-    //     createHardLink(att_path, target_folder);
-    //   }
-    // });
   }
 
   /**
@@ -46,9 +21,8 @@ export class BetterSync {
 
   static manualSync() {
     ztoolkit.log("manualSync", "Started.");
-    const atts = Zotero.Items.get(getSelectedAttachments());
-    ztoolkit.log("manualSync", atts);
-    if (atts.length > 0) BetterSyncApi.autoSync(atts);
+    const ids = getSelectedAttachments();
+    this.autoSync(ids);
   }
 
   /**
@@ -64,30 +38,31 @@ export class BetterSync {
           att.fileExists(),
       )
       .filter(checkFileType);
-    console.log(atts);
     // auto sync stored file attachments
-    if (atts.length > 0) BetterSyncApi.autoSync(atts);
+    if (atts.length > 0) BetterSyncApi.sync(atts);
   }
 }
 
 class BetterSyncApi {
-  static autoSync(atts: Zotero.Item[]) {
+  static sync(atts: Zotero.Item[]) {
+    const folderSep = Zotero.isWin ? "\\" : "/";
     const items: { stored_file: string; linked_dir: string }[] = [];
     const linked_dir = getBaseAttachmentPath();
     atts.forEach((att) => {
+      const subfolders = getSubfolderPaths(att);
       // get attachment path
       const att_path = att.getFilePath() as string;
-      items.push({
-        stored_file: att_path,
-        linked_dir: linked_dir,
+
+      subfolders.forEach((subfolder) => {
+        items.push({
+          stored_file: att_path,
+          linked_dir: linked_dir + folderSep + subfolder,
+        });
       });
     });
 
     const data = { direction: "auto", items: items };
 
-    ztoolkit.log(JSON.stringify(data));
-    ztoolkit.log(`${getPref("apiUrl")}/sync`);
-    ztoolkit.log(Zotero.HTTP.doPost);
     Zotero.HTTP.doPost(
       `${getPref("apiUrl")}/sync`,
       JSON.stringify(data),
@@ -97,4 +72,42 @@ class BetterSyncApi {
       "application/json",
     );
   }
+}
+
+function getSubfolderPaths(att: Zotero.Item): string[] {
+  const collectionPaths: string[] = [];
+  const folderSep = Zotero.isWin ? "\\" : "/";
+
+  // get nested collection paths
+  function _getCollectionPath(collectionID: number): any {
+    const collection = Zotero.Collections.get(
+      collectionID,
+    ) as Zotero.Collection;
+    ztoolkit.log(
+      "【collection】",
+      collection,
+      collection.parentID,
+      collection.name,
+      typeof collection.parentID,
+    );
+    if (!collection.parentID) {
+      ztoolkit.log("【collection.name】", collection.name);
+      return collection.name;
+    }
+
+    return (
+      _getCollectionPath(collection.parentID) + folderSep + collection.name
+    );
+  }
+
+  const item = att.parentItem;
+  if (!item) return [];
+
+  item.getCollections().forEach((collectionID) => {
+    collectionPaths.push(
+      _getCollectionPath(collectionID) + folderSep + item.getField("title"),
+    );
+  });
+
+  return collectionPaths;
 }
