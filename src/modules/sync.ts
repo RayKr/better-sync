@@ -5,6 +5,7 @@ import {
   getSelectedAttachments,
 } from "../utils/file";
 import { getPref } from "../utils/prefs";
+import { config } from "../../package.json";
 
 export class BetterSync {
   /**
@@ -20,7 +21,6 @@ export class BetterSync {
   static syncLinked2Stored() {}
 
   static manualSync() {
-    ztoolkit.log("manualSync", "Started.");
     const ids = getSelectedAttachments();
     this.autoSync(ids);
   }
@@ -67,9 +67,21 @@ class BetterSyncApi {
       `${getPref("apiUrl")}/sync`,
       JSON.stringify(data),
       (response: any) => {
-        ztoolkit.log(response);
+        response = JSON.parse(response.response);
+        const type = response.code == 200 ? "success" : "error";
+        const stored2linked = response.data ? response.data.stored2linked : 0,
+          linked2stored = response.data ? response.data.linked2stored : 0,
+          skipped = response.data ? response.data.skipped : 0;
+
+        new ztoolkit.ProgressWindow(config.addonName)
+          .createLine({
+            text: `[${stored2linked}/${linked2stored}/${skipped}] Better Sync succeeded.`,
+            type: type,
+            progress: 100,
+          })
+          .show();
       },
-      "application/json",
+      { "Content-Type": "application/json" },
     );
   }
 }
@@ -83,15 +95,7 @@ function getSubfolderPaths(att: Zotero.Item): string[] {
     const collection = Zotero.Collections.get(
       collectionID,
     ) as Zotero.Collection;
-    ztoolkit.log(
-      "【collection】",
-      collection,
-      collection.parentID,
-      collection.name,
-      typeof collection.parentID,
-    );
     if (!collection.parentID) {
-      ztoolkit.log("【collection.name】", collection.name);
       return collection.name;
     }
 
