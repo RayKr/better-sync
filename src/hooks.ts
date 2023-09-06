@@ -37,6 +37,7 @@ async function onMainWindowLoad(win: Window): Promise<void> {
     .show();
 
   UIFactory.registerRightClickMenuItem();
+  UIFactory.registerShortcuts();
 
   popupWin.changeLine({
     progress: 100,
@@ -103,6 +104,16 @@ function onMenuClickEvents(type: string) {
   }
 }
 
+function onShortcuts(type: string) {
+  ztoolkit.log("========> onShortcuts", type);
+  new ztoolkit.ProgressWindow(config.addonName)
+    .createLine({
+      text: "Smaller!",
+      type: "default",
+    })
+    .show();
+}
+
 // Add your hooks here. For element click, etc.
 // Keep in mind hooks only do dispatch. Don't add code that does real jobs in hooks.
 // Otherwise the code would be hard to read and maintian.
@@ -115,4 +126,5 @@ export default {
   onNotify,
   onPrefsEvent,
   onMenuClickEvents,
+  onShortcuts,
 };

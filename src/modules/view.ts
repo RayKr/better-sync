@@ -89,4 +89,27 @@ export class UIFactory {
       icon: menuIcon,
     });
   }
+
+  @example
+  static registerShortcuts() {
+    const keysetId = `${config.addonRef}-keyset`;
+    const cmdsetId = `${config.addonRef}-cmdset`;
+    const cmdSmallerId = `${config.addonRef}-cmd-smaller`;
+    // Register an event key for Alt+L
+    ztoolkit.Shortcut.register("event", {
+      id: `${config.addonRef}-key-preview`,
+      key: "L",
+      modifiers: "shift", // shift work on macOS
+      callback: (keyOptions) => {
+        ztoolkit.log("==>event", keyOptions);
+        addon.hooks.onShortcuts("preview");
+      },
+    });
+    new ztoolkit.ProgressWindow(config.addonName)
+      .createLine({
+        text: "Example Shortcuts: Alt+L/S/C",
+        type: "success",
+      })
+      .show();
+  }
 }
