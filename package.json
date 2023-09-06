@@ -43,7 +43,7 @@
   "dependencies": {
     "fastify": "^4.22.2",
     "shelljs": "^0.8.5",
-    "zotero-plugin-toolkit": "^2.2.9"
+    "zotero-plugin-toolkit": "^2.3.2"
   },
   "devDependencies": {
     "@types/node": "^20.4.2",
