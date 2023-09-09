@@ -1,11 +1,8 @@
-// 引入shelljs
-import {
-  checkFileType,
-  getBaseAttachmentPath,
-  getSelectedAttachments,
-} from "../utils/file";
 import { getPref } from "../utils/prefs";
 import { config } from "../../package.json";
+import { getString } from "../utils/locale";
+
+const folderSep = Zotero.isWin ? "\\" : "/";
 
 export class BetterSync {
   /**
@@ -22,32 +19,43 @@ export class BetterSync {
 
   static manualSync() {
     const ids = getSelectedAttachments();
-    this.autoSync(ids);
+    this.autoSync("sync", "item", ids, {}, true);
   }
 
   /**
    * Sync data
    */
-  static autoSync(ids: number[] | string[]) {
-    // retrieve the added/modified items
-    const atts = Zotero.Items.get(ids)
-      .filter(
-        (att) =>
-          att.isStoredFileAttachment() &&
-          !att.isTopLevelItem() &&
-          att.fileExists(),
-      )
-      .filter(checkFileType);
-    // auto sync stored file attachments
-    if (atts.length > 0) BetterSyncApi.sync(atts);
-  }
-}
+  static autoSync(
+    event: string,
+    type: string,
+    ids: string[] | number[],
+    extraData: { [key: string]: any },
+    showMsg: boolean = false,
+  ) {
+    ztoolkit.log(`autoSync ${event} ${type} ${ids}`, "Started.");
 
-class BetterSyncApi {
-  static sync(atts: Zotero.Item[]) {
-    const folderSep = Zotero.isWin ? "\\" : "/";
+    // TODO modify还暂时不支持
+
+    Zotero.Items.get(ids).forEach((item) => {
+      ztoolkit.log("item=", item);
+      ztoolkit.log("item.isAttachment()=", item.isAttachment());
+      ztoolkit.log("id", item.id);
+    });
+
+    const atts = Zotero.Items.get(ids)
+      .filter((att) => att.isAttachment())
+      .filter(checkFileType);
+    if (event == "add") {
+      atts.filter((att) => att.fileExists());
+    }
+
+    ztoolkit.log(atts, "Attachments to sync.");
+
+    // auto sync stored file attachments
+    if (!atts.length) return;
+
     const items: { stored_file: string; linked_dir: string }[] = [];
-    const linked_dir = getBaseAttachmentPath();
+    const basePath = getBaseAttachmentPath();
     atts.forEach((att) => {
       const subfolders = getSubfolderPaths(att);
       // get attachment path
@@ -56,64 +64,44 @@ class BetterSyncApi {
       subfolders.forEach((subfolder) => {
         items.push({
           stored_file: att_path,
-          linked_dir: linked_dir + folderSep + subfolder,
+          linked_dir: basePath + folderSep + subfolder,
         });
       });
     });
+    // 在前端判断是应该添加，还是删除重建，还是直接删除，而不应该是在后端判断
+    const data = { event: event, items: items, base_path: basePath };
+    // request sync server
+    _syncPost(data, showMsg);
+  }
+}
 
-    const data = { direction: "auto", items: items };
+// ************************************** Request ************************************** //
 
-    Zotero.HTTP.doPost(
-      `${getPref("apiUrl")}/sync`,
-      JSON.stringify(data),
-      (response: any) => {
-        response = JSON.parse(response.response);
-        const type = response.code == 200 ? "success" : "error";
-        const stored2linked = response.data ? response.data.stored2linked : 0,
-          linked2stored = response.data ? response.data.linked2stored : 0,
-          skipped = response.data ? response.data.skipped : 0;
+function _syncPost(data: any, showMsg: boolean = false) {
+  Zotero.HTTP.doPost(
+    `${getPref("apiUrl")}/sync`,
+    JSON.stringify(data),
+    (response: any) => {
+      response = JSON.parse(response.response);
+      const type = response.code == 200 ? "success" : "error";
+      const stored2linked = response.data ? response.data.stored2linked : 0,
+        linked2stored = response.data ? response.data.linked2stored : 0,
+        skipped = response.data ? response.data.skipped : 0,
+        modified = response.data ? response.data.modified : 0,
+        removed = response.data ? response.data.removed : 0;
 
+      if (showMsg) {
         new ztoolkit.ProgressWindow(config.addonName)
           .createLine({
-            text: `[${stored2linked}/${linked2stored}/${skipped}] Better Sync succeeded.`,
+            text: `[${stored2linked}/${linked2stored}/${skipped}/${modified}/${removed}] Better Sync succeeded.`,
             type: type,
             progress: 100,
           })
           .show();
-      },
-      { "Content-Type": "application/json" },
-    );
-  }
-}
-
-function getSubfolderPaths(att: Zotero.Item): string[] {
-  const collectionPaths: string[] = [];
-  const folderSep = Zotero.isWin ? "\\" : "/";
-
-  // get nested collection paths
-  function _getCollectionPath(collectionID: number): any {
-    const collection = Zotero.Collections.get(
-      collectionID,
-    ) as Zotero.Collection;
-    if (!collection.parentID) {
-      return collection.name;
-    }
-
-    return (
-      _getCollectionPath(collection.parentID) + folderSep + collection.name
-    );
-  }
-
-  const item = att.parentItem;
-  if (!item) return [];
-
-  item.getCollections().forEach((collectionID) => {
-    collectionPaths.push(
-      _getCollectionPath(collectionID) + folderSep + item.getField("title"),
-    );
-  });
-
-  return collectionPaths;
+      }
+    },
+    { "Content-Type": "application/json" },
+  );
 }
 
 Zotero.Server.Endpoints["/better-sync/sync"] = class {
@@ -152,3 +140,107 @@ Zotero.Server.Endpoints["/better-sync/sync"] = class {
     // }
   }
 };
+
+// ************************************** Tools ************************************** //
+
+/**
+ * Get selected attachments
+ * @returns {array}    Array with attachment ids
+ */
+export function getSelectedAttachments(): string[] | number[] {
+  // get selected items
+  let attachments: Array<any> = ZoteroPane.getSelectedItems()
+    .map((item: any) => (item.isRegularItem() ? item.getAttachments() : [item]))
+    .reduce((a: any, b: any) => a.concat(b), [])
+    .map((item: any) =>
+      typeof item == "number" ? Zotero.Items.get(item) : item,
+    )
+    .filter((item: any) => item.isAttachment())
+    .filter(
+      (att: any) =>
+        att.attachmentLinkMode !== Zotero.Attachments.LINK_MODE_LINKED_URL,
+    )
+    .map((att: any) => att.id);
+  // remove duplicate elements
+  if (attachments.length > 0)
+    attachments = Zotero.Utilities.arrayUnique(attachments);
+  // return array with attachment ids
+  return attachments;
+}
+
+export function checkFileType(att: any) {
+  if (!getPref("useFileTypes")) return true;
+  const pos = att.attachmentFilename.lastIndexOf("."),
+    filetype =
+      pos == -1 ? "" : att.attachmentFilename.substr(pos + 1).toLowerCase(),
+    regex =
+      getPref("filetypes")?.toString().toLowerCase().replace(/,/gi, "|") ?? "";
+  // return value
+  return filetype.search(new RegExp(regex)) >= 0 ? true : false;
+}
+
+/**
+ * Returns the base attachment path for syncing attachments.
+ * @returns {string} The base attachment path.
+ * @throws {Error} If the base attachment path is not set.
+ */
+export function getBaseAttachmentPath(): string {
+  let path;
+  // if use zotero default folder
+  const useDefault = getPref("useDefaultBasePath");
+  if (useDefault) {
+    // get target folder path from preference
+    path = Zotero.Prefs.get("extensions.zotero.baseAttachmentPath", true);
+  } else {
+    path = getPref("baseAttachmentPath");
+  }
+  if (!path) {
+    // TODO show error message
+    const msg = getString("error-needs-base-path");
+    ztoolkit.log("BetterSync", msg);
+    throw new Error(msg);
+  }
+  if (typeof path !== "string") {
+    // TODO show error message
+    const msg = getString("error-base-path-not-string");
+    ztoolkit.log("BetterSync", msg);
+    throw new Error(msg);
+  }
+
+  return path;
+}
+
+/**
+ * Returns the subfolder paths for the given attachment.
+ * @param {Zotero.Item} att The attachment.
+ * @returns {string[]} The subfolder paths.
+ */
+function getSubfolderPaths(att: Zotero.Item): string[] {
+  const collectionPaths: string[] = [];
+  const folderSep = Zotero.isWin ? "\\" : "/";
+
+  // get nested collection paths
+  function _getCollectionPath(collectionID: number): any {
+    const collection = Zotero.Collections.get(
+      collectionID,
+    ) as Zotero.Collection;
+    if (!collection.parentID) {
+      return collection.name;
+    }
+
+    return (
+      _getCollectionPath(collection.parentID) + folderSep + collection.name
+    );
+  }
+
+  const item = att.parentItem;
+  if (!item) return [];
+
+  item.getCollections().forEach((collectionID) => {
+    collectionPaths.push(
+      _getCollectionPath(collectionID) + folderSep + item.getField("title"),
+    );
+  });
+
+  return collectionPaths;
+}

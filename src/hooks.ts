@@ -73,11 +73,8 @@ async function onNotify(
   extraData: { [key: string]: any },
 ) {
   // You can add your code to the corresponding notify type
-  ztoolkit.log("notify", event, type, ids, extraData);
-  if (event == "add" && type == "item" && getPref("enableAutoSync")) {
-    BetterSync.autoSync(ids);
-  } else {
-    return;
+  if (getPref("enableAutoSync")) {
+    BetterSync.autoSync(event, type, ids, extraData);
   }
 }
 
