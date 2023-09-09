@@ -1,10 +1,15 @@
-import { BasicFactory, UIFactory } from "./modules/view";
 import { BetterSync } from "./modules/sync";
 import { config } from "../package.json";
 import { getString, initLocale } from "./utils/locale";
 import { registerPrefsScripts } from "./modules/preferenceScript";
 import { createZToolkit } from "./utils/ztoolkit";
 import { getPref } from "./utils/prefs";
+import { registerItemBoxExtraRows } from "./modules/itemBox";
+import { registerShortcuts } from "./modules/shortcuts";
+import { registerMenu } from "./modules/menu";
+import { registerNotify } from "./modules/notify";
+import { setDefaultPrefSetting } from "./modules/defaultPrefs";
+import { registerExtraColumns } from "./modules/itemTree";
 
 async function onStartup() {
   await Promise.all([
@@ -13,47 +18,45 @@ async function onStartup() {
     Zotero.uiReadyPromise,
   ]);
   initLocale();
-
-  BasicFactory.registerPrefs();
-
-  BasicFactory.registerNotifier();
+  setDefaultPrefSetting();
+  registerNotify(["item"]);
 
   await onMainWindowLoad(window);
 }
 
 async function onMainWindowLoad(win: Window): Promise<void> {
+  await new Promise((resolve) => {
+    if (win.document.readyState !== "complete") {
+      win.document.addEventListener("readystatechange", () => {
+        if (win.document.readyState === "complete") {
+          resolve(void 0);
+        }
+      });
+    }
+    resolve(void 0);
+  });
+
+  await Promise.all([
+    Zotero.initializationPromise,
+    Zotero.unlockPromise,
+    Zotero.uiReadyPromise,
+  ]);
   // Create ztoolkit for every window
   addon.data.ztoolkit = createZToolkit();
 
-  const popupWin = new ztoolkit.ProgressWindow(config.addonName, {
-    closeOnClick: true,
-    closeTime: -1,
-  })
-    .createLine({
-      text: getString("startup-begin"),
-      type: "default",
-      progress: 0,
-    })
-    .show();
+  registerMenu();
+  registerShortcuts();
 
-  UIFactory.registerRightClickMenuItem();
-  UIFactory.registerShortcuts();
-
-  popupWin.changeLine({
-    progress: 100,
-    text: `[100%] ${getString("startup-finish")}`,
-  });
-  popupWin.startCloseTimer(5000);
+  // await registerItemBoxExtraRows();
+  // await registerExtraColumns();
 }
 
 async function onMainWindowUnload(win: Window): Promise<void> {
   ztoolkit.unregisterAll();
-  addon.data.dialog?.window?.close();
 }
 
 function onShutdown(): void {
   ztoolkit.unregisterAll();
-  addon.data.dialog?.window?.close();
   // Remove addon object
   addon.data.alive = false;
   delete Zotero[config.addonInstance];

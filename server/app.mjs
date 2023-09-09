@@ -25,10 +25,13 @@ app.post("/api/v1/sync", async (request, reply) => {
     console.log(item);
     let rst;
     switch (direction) {
-      case "stored2linked":
+      case "update": // update linked to stored
         break;
-      case "linked2stored":
+      case "remove": // remove linked
         break;
+      case "move": // move linked to a new location
+        break;
+      case "sync": // sync stored to linked
       default:
         rst = autoSync(item.stored_file, item.linked_dir);
         counts[rst.direction] += rst.num;

@@ -115,3 +115,40 @@ function getSubfolderPaths(att: Zotero.Item): string[] {
 
   return collectionPaths;
 }
+
+Zotero.Server.Endpoints["/better-sync/sync"] = class {
+  public supportedMethods = ["GET", "POST"];
+  public OK = 200;
+  public SERVER_ERROR = 500;
+
+  public async init(request: { query: any }) {
+    ztoolkit.log("====>init", "Started.");
+    const options = request.query || {};
+
+    if (options.probe) return [this.OK, "text/plain", "ready"];
+
+    // try {
+    //   const citation = options.selected
+    //     ? await selected(options)
+    //     : await pick(options);
+
+    //   if (options.texstudio) {
+    //     if (!TeXstudio.enabled)
+    //       return [this.SERVER_ERROR, "application/text", "TeXstudio not found"];
+    //     await TeXstudio.push(citation);
+    //   }
+
+    //   if (options.clipboard) toClipboard(citation);
+
+    //   return [this.OK, "text/html; charset=utf-8", citation];
+    // } catch (err) {
+    //   log.error("CAYW request failed:", options, err);
+    //   flash("CAYW Failed", err.message);
+    //   return [
+    //     this.SERVER_ERROR,
+    //     "application/text",
+    //     `CAYW failed: ${err.message}\n${err.stack}`,
+    //   ];
+    // }
+  }
+};
