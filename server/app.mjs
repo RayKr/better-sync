@@ -13,7 +13,7 @@ app.get("/", async (request, reply) => {
 });
 
 app.post("/api/v1/sync", async (request, reply) => {
-  console.log(request.body);
+  app.log.info(request.body);
   const items = request.body.items;
   const event = request.body.event;
   const base_path = request.body.base_path;
@@ -23,7 +23,7 @@ app.post("/api/v1/sync", async (request, reply) => {
 
   const handler = new BetterSyncHandler(event, items, base_path);
   const counts = handler.getCounts();
-  console.log(counts);
+  app.log.info(counts);
 
   reply.type("application/json").code(200);
   return { code: 200, message: "Success.", data: counts };
@@ -41,8 +41,8 @@ class BetterSyncHandler {
     this.base_path = base_path;
 
     this.counts = {
-      stored2linked: 0,
-      linked2stored: 0,
+      forward: 0,
+      inverse: 0,
       skipped: 0,
       removed: 0,
       error: 0,
@@ -53,7 +53,7 @@ class BetterSyncHandler {
 
   hook() {
     if (this.event === "modify") {
-      this._rmSameFiles();
+      this._rmAllSameFiles();
     }
     this.items.forEach((item) => {
       item.base_path = this.base_path;
@@ -91,8 +91,8 @@ class BetterSyncHandler {
         shell.mkdir("-p", item.linked_dir);
       }
 
-      shell.ln("-f", item.stored_file, item.linked_fire);
-      this.counts["stored2linked"] += 1;
+      shell.ln("-f", item.stored_file, item.linked_file);
+      this.counts["forward"] += 1;
     } else {
       this.counts["error"] += 1;
     }
@@ -101,7 +101,7 @@ class BetterSyncHandler {
   inverseSync(item) {
     if (shell.test("-e", item.linked_file)) {
       shell.ln("-f", item.linked_file, item.stored_file);
-      this.counts["linked2stored"] += 1;
+      this.counts["inverse"] += 1;
     } else {
       this.counts["error"] += 1;
     }
@@ -135,19 +135,17 @@ class BetterSyncHandler {
       }
 
       // check existence of same inode files in linked_dir
-      this._removeDuplicatedFiles(item);
+      this._rmDuplicatedFiles(item);
 
       // check existence of the linked_file
       if (!shell.test("-e", item.linked_file)) {
         this.forwardSync(item);
-        this.counts["stored2linked"] += 1;
       } else {
         // linked_file exists but not same inode, inverseSync
         if (!_getSameInodeFiles(item.linked_dir, item.stored_file).length) {
           // TODO 此处逻辑不够严谨，文件存在但不同inode，会被hack，最好还是要检查一下pdf的metadata是否相同
           // TODO 如果pdf metadata相同，直接可以inverseSync，如果不同，需要先删除linked_file，再forwardSync
           this.inverseSync(item);
-          this.counts["linked2stored"] += 1;
         } else {
           // same filename, same inode, skip
           this.counts["skipped"] += 1;
@@ -158,7 +156,7 @@ class BetterSyncHandler {
     }
   }
 
-  _rmSameFiles() {
+  _rmAllSameFiles() {
     this.items.forEach((item) => {
       const samefiles = _getSameInodeFiles(this.base_path, item.stored_file);
       samefiles.forEach((file) => {
@@ -171,7 +169,7 @@ class BetterSyncHandler {
     });
   }
 
-  _removeDuplicatedFiles(item) {
+  _rmDuplicatedFiles(item) {
     const same_inode_files = _getSameInodeFiles(
       item.linked_dir,
       item.stored_file,

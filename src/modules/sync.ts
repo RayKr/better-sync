@@ -19,7 +19,7 @@ export class BetterSync {
 
   static manualSync() {
     const ids = getSelectedAttachments();
-    this.autoSync("sync", "item", ids, {}, true);
+    this.autoSync("auto", "item", ids, {}, true);
   }
 
   /**
@@ -77,16 +77,35 @@ function _syncPost(data: any, showMsg: boolean = false) {
     (response: any) => {
       response = JSON.parse(response.response);
       const type = response.code == 200 ? "success" : "error";
-      const stored2linked = response.data ? response.data.stored2linked : 0,
-        linked2stored = response.data ? response.data.linked2stored : 0,
+      const forward = response.data ? response.data.forward : 0,
+        inverse = response.data ? response.data.inverse : 0,
         skipped = response.data ? response.data.skipped : 0,
-        modified = response.data ? response.data.modified : 0,
         removed = response.data ? response.data.removed : 0;
 
       if (showMsg) {
         new ztoolkit.ProgressWindow(config.addonName)
           .createLine({
-            text: `[${stored2linked}/${linked2stored}/${skipped}/${modified}/${removed}] Better Sync succeeded.`,
+            text: `Better Sync succeeded.`,
+            type: type,
+            progress: 100,
+          })
+          .createLine({
+            text: `Forward: ${forward}`,
+            type: type,
+            progress: 100,
+          })
+          .createLine({
+            text: `Inverse: ${inverse}`,
+            type: type,
+            progress: 100,
+          })
+          .createLine({
+            text: `Skipped: ${skipped}`,
+            type: type,
+            progress: 100,
+          })
+          .createLine({
+            text: `Removed: ${removed}`,
             type: type,
             progress: 100,
           })
