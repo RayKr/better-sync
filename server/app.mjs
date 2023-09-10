@@ -70,7 +70,7 @@ class BetterSyncHandler {
           break;
         case "trash": // move to trash
         case "delete": // delete permanently
-          this.deleteSync(item);
+          this.deleteSync(item.linked_file);
           break;
         case "add": // add stored to linked
           this.forwardSync(item);
@@ -112,13 +112,13 @@ class BetterSyncHandler {
     this.forwardSync(item);
   }
 
-  deleteSync(item) {
+  deleteSync(file) {
     // del target file directly
-    shell.rm("-f", item.linked_file);
+    shell.rm("-f", file);
     this.counts["removed"] += 1;
     // After deleting the file, if the folder is empty, delete the folders layer by layer.
-    let dir = item.linked_dir;
-    while (dir !== item.base_path) {
+    let dir = path.dirname(file);
+    while (dir !== this.base_path) {
       if (shell.ls(dir).length !== 0) {
         break;
       }
@@ -162,8 +162,7 @@ class BetterSyncHandler {
       samefiles.forEach((file) => {
         // delete different filename files
         if (file !== item.stored_file) {
-          shell.rm("-f", file);
-          this.counts["removed"] += 1;
+          this.deleteSync(file);
         }
       });
     });
@@ -177,8 +176,7 @@ class BetterSyncHandler {
     same_inode_files.forEach((file) => {
       // delete different filename files
       if (file !== item.linked_file) {
-        shell.rm("-f", file);
-        this.counts["removed"] += 1;
+        this.deleteSync(file);
       }
     });
   }
