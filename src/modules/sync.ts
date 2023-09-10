@@ -26,14 +26,14 @@ export class BetterSync {
   static autoSync(
     event: string,
     type: string,
-    ids: number[],
+    ids: number[] | string[],
     extraData: { [key: string]: any },
     showMsg: boolean = false,
   ) {
     ztoolkit.log(`AutoSync Started:`, event, type, ids, extraData);
 
     // solve: modify skip
-    ids = ids.filter((id) => !extraData[id]?.skipSelect);
+    ids = ids.filter((id) => !extraData[id]?.skipSelect) as number[];
     if (ids.length == 0) {
       ztoolkit.log("AutoSync Finished:", ids);
       return;

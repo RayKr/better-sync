@@ -69,7 +69,7 @@ function onShutdown(): void {
 async function onNotify(
   event: string,
   type: string,
-  ids: number[],
+  ids: number[] | string[],
   extraData: { [key: string]: any },
 ) {
   // You can add your code to the corresponding notify type
