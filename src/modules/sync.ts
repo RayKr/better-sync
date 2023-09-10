@@ -2,8 +2,6 @@ import { getPref } from "../utils/prefs";
 import { config } from "../../package.json";
 import { getString } from "../utils/locale";
 
-const folderSep = Zotero.isWin ? "\\" : "/";
-
 export class BetterSync {
   /**
    * Sync stored data to linked data
@@ -28,16 +26,23 @@ export class BetterSync {
   static autoSync(
     event: string,
     type: string,
-    ids: string[] | number[],
+    ids: number[],
     extraData: { [key: string]: any },
     showMsg: boolean = false,
   ) {
-    ztoolkit.log(`autoSync ${event} ${type} ${ids}`, "Started.");
+    ztoolkit.log(`AutoSync Started:`, event, type, ids, extraData);
+
+    // solve: modify skip
+    ids = ids.filter((id) => !extraData[id]?.skipSelect);
+    if (ids.length == 0) {
+      ztoolkit.log("AutoSync Finished:", ids);
+      return;
+    }
 
     const basePath = getBaseAttachmentPath();
     const items: { stored_file: string; linked_dir: string }[] = [];
     appendAttachments(items, ids);
-    ztoolkit.log("items=", items);
+    ztoolkit.log("AutoSync Items:", items);
 
     // 在前端判断是应该添加，还是删除重建，还是直接删除，而不应该是在后端判断
     const data = { event: event, items: items, base_path: basePath };
@@ -159,7 +164,7 @@ Zotero.Server.Endpoints["/better-sync/sync"] = class {
  * Get selected attachments
  * @returns {array}    Array with attachment ids
  */
-export function getSelectedAttachments(): string[] | number[] {
+export function getSelectedAttachments(): number[] {
   // get selected items
   let attachments: Array<any> = ZoteroPane.getSelectedItems()
     .map((item: any) => (item.isRegularItem() ? item.getAttachments() : [item]))
@@ -246,13 +251,23 @@ function getSubfolderPaths(att: Zotero.Item): string[] {
   }
 
   const item = att.parentItem;
+  ztoolkit.log("===>父item为", item);
   if (!item) return [];
 
+  const name = getItemDisplayName(item);
+
   item.getCollections().forEach((collectionID) => {
-    collectionPaths.push(
-      _getCollectionPath(collectionID) + folderSep + item.getField("title"),
-    );
+    collectionPaths.push(_getCollectionPath(collectionID) + folderSep + name);
   });
 
   return collectionPaths;
+}
+
+function getItemDisplayName(item: Zotero.Item) {
+  switch (item.itemType) {
+    case "case":
+      return item.getField("caseName");
+    default:
+      return item.getField("title");
+  }
 }
