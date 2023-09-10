@@ -34,45 +34,38 @@ export class BetterSync {
   ) {
     ztoolkit.log(`autoSync ${event} ${type} ${ids}`, "Started.");
 
-    // TODO modify还暂时不支持
-
-    Zotero.Items.get(ids).forEach((item) => {
-      ztoolkit.log("item=", item);
-      ztoolkit.log("item.isAttachment()=", item.isAttachment());
-      ztoolkit.log("id", item.id);
-    });
-
-    const atts = Zotero.Items.get(ids)
-      .filter((att) => att.isAttachment())
-      .filter(checkFileType);
-    if (event == "add") {
-      atts.filter((att) => att.fileExists());
-    }
-
-    ztoolkit.log(atts, "Attachments to sync.");
-
-    // auto sync stored file attachments
-    if (!atts.length) return;
-
-    const items: { stored_file: string; linked_dir: string }[] = [];
     const basePath = getBaseAttachmentPath();
-    atts.forEach((att) => {
-      const subfolders = getSubfolderPaths(att);
-      // get attachment path
-      const att_path = att.getFilePath() as string;
+    const items: { stored_file: string; linked_dir: string }[] = [];
+    appendAttachments(items, ids);
+    ztoolkit.log("items=", items);
 
-      subfolders.forEach((subfolder) => {
-        items.push({
-          stored_file: att_path,
-          linked_dir: basePath + folderSep + subfolder,
-        });
-      });
-    });
     // 在前端判断是应该添加，还是删除重建，还是直接删除，而不应该是在后端判断
     const data = { event: event, items: items, base_path: basePath };
     // request sync server
     _syncPost(data, showMsg);
   }
+}
+
+function appendAttachments(
+  items: { stored_file: string; linked_dir: string }[],
+  ids: string[] | number[],
+) {
+  Zotero.Items.get(ids).forEach((att) => {
+    if (att.isAttachment()) {
+      const subfolders = getSubfolderPaths(att);
+      // get attachment path
+      const att_path = att.getFilePath() as string;
+      subfolders.forEach((subfolder) => {
+        items.push({
+          stored_file: att_path,
+          linked_dir: subfolder,
+        });
+      });
+    }
+    if (att.isRegularItem()) {
+      appendAttachments(items, att.getAttachments());
+    }
+  });
 }
 
 // ************************************** Request ************************************** //
