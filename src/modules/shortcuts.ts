@@ -23,12 +23,25 @@ export function registerShortcuts() {
   // Register an event key for Alt+L
   ztoolkit.Shortcut.register("event", {
     id: `${config.addonRef}-key-preview`,
-    key: "L",
-    modifiers: "shift", // shift work on macOS
+    key: "x",
+    modifiers: "", // shift work on macOS
     callback: (keyOptions) => {
       addon.hooks.onShortcuts("quicklook");
     },
   });
+
+  document.onkeydown = (e) => {
+    ztoolkit.log("onkeydown", e);
+    if (e.ctrlKey && e.key == "p") {
+      e.preventDefault();
+      e.stopPropagation();
+      quicklook();
+    }
+  };
+
+  // window.addEventListener("keypress", (e) => {
+  //   ztoolkit.log("keyPress", e);
+  // });
 }
 
 export function quicklook() {
