@@ -3,45 +3,25 @@ import { appendStoredAttachments, getSelectedAttachments } from "../utils/file";
 import { getPref } from "../utils/prefs";
 
 export function registerShortcuts() {
-  //   ztoolkit.Shortcut.register("element", {
-  //     id: `${config.addonRef}-translateKey`,
-  //     key: "T",
-  //     modifiers: "accel",
-  //     xulData: {
-  //       document,
-  //       command: `${config.addonRef}-translateCmd`,
-  //       _parentId: `${config.addonRef}-keyset`,
-  //       _commandOptions: {
-  //         id: `${config.addonRef}-translateCmd`,
-  //         document,
-  //         _parentId: `${config.addonRef}-cmdset`,
-  //         oncommand: `Zotero.${config.addonInstance}.hooks.onShortcuts(Zotero_Tabs.selectedType)`,
-  //       },
-  //     },
-  //   });
-
   // Register an event key for Alt+L
-  ztoolkit.Shortcut.register("event", {
-    id: `${config.addonRef}-key-preview`,
-    key: "x",
-    modifiers: "", // shift work on macOS
-    callback: (keyOptions) => {
-      addon.hooks.onShortcuts("quicklook");
-    },
-  });
-
-  document.onkeydown = (e) => {
-    ztoolkit.log("onkeydown", e);
-    if (e.ctrlKey && e.key == "p") {
-      e.preventDefault();
-      e.stopPropagation();
-      quicklook();
-    }
-  };
-
-  // window.addEventListener("keypress", (e) => {
-  //   ztoolkit.log("keyPress", e);
+  // ztoolkit.Shortcut.register("event", {
+  //   id: `${config.addonRef}-key-preview`,
+  //   key: "x",
+  //   modifiers: "", // shift work on macOS
+  //   callback: (keyOptions) => {
+  //     addon.hooks.onShortcuts("quicklook");
+  //   },
   // });
+
+  window.addEventListener("keypress", (event) => {
+    const cmdOrCtrlOnly = Zotero.isMac
+      ? event.metaKey && !event.shiftKey && !event.ctrlKey && !event.altKey
+      : event.ctrlKey && !event.shiftKey && !event.altKey;
+
+    if (cmdOrCtrlOnly && event.key === "y") {
+      addon.hooks.onShortcuts("quicklook");
+    }
+  });
 }
 
 export function quicklook() {
