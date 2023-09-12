@@ -41,15 +41,15 @@
   },
   "homepage": "https://github.com/raykr/better-sync#readme",
   "dependencies": {
-    "fastify": "^4.22.2",
+    "fastify": "^4.23.0",
     "shelljs": "^0.8.5",
-    "zotero-plugin-toolkit": "^2.3.3"
+    "zotero-plugin-toolkit": "^2.3.7"
   },
   "devDependencies": {
     "@types/node": "^20.6.0",
     "@types/shelljs": "^0.8.12",
-    "@typescript-eslint/eslint-plugin": "^6.6.0",
-    "@typescript-eslint/parser": "^6.6.0",
+    "@typescript-eslint/eslint-plugin": "^6.7.0",
+    "@typescript-eslint/parser": "^6.7.0",
     "chokidar-cli": "^3.0.0",
     "compressing": "^1.10.0",
     "concurrently": "^8.2.1",
@@ -61,6 +61,6 @@
     "release-it": "^16.1.5",
     "replace-in-file": "^7.0.1",
     "typescript": "^5.2.2",
-    "zotero-types": "^1.2.2"
+    "zotero-types": "^1.2.4"
   }
 }

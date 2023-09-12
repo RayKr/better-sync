@@ -5,7 +5,7 @@ import { registerPrefsScripts } from "./modules/preferenceScript";
 import { createZToolkit } from "./utils/ztoolkit";
 import { getPref } from "./utils/prefs";
 import { registerItemBoxExtraRows } from "./modules/itemBox";
-import { registerShortcuts } from "./modules/shortcuts";
+import { quicklook, registerShortcuts } from "./modules/shortcuts";
 import { registerMenu } from "./modules/menu";
 import { registerNotify } from "./modules/notify";
 import { setDefaultPrefSetting } from "./modules/defaultPrefs";
@@ -105,13 +105,9 @@ function onMenuClickEvents(type: string) {
 }
 
 function onShortcuts(type: string) {
-  ztoolkit.log("========> onShortcuts", type);
-  new ztoolkit.ProgressWindow(config.addonName)
-    .createLine({
-      text: "Smaller!",
-      type: "default",
-    })
-    .show();
+  if (type === "quicklook") {
+    quicklook();
+  }
 }
 
 // Add your hooks here. For element click, etc.
