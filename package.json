@@ -1,6 +1,6 @@
 {
   "name": "better-sync",
-  "version": "0.0.2-3",
+  "version": "0.0.2-4",
   "description": "A better way to sync your file on multiple devices.",
   "config": {
     "addonName": "Better Sync",
