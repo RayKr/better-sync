@@ -104,9 +104,13 @@ function onMenuClickEvents(type: string) {
   }
 }
 
-function onShortcuts(type: string) {
-  if (type === "quicklook") {
-    quicklook();
+async function onShortcuts(type: string) {
+  switch (type) {
+    case "quicklook":
+      quicklook();
+      break;
+    default:
+      break;
   }
 }
 
